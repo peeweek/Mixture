@@ -1,63 +1,88 @@
 ﻿Shader "Hidden/MixtureTexture3DPreview"
 {
-    Properties
-    {
-        _Texture3D ("Texture", 3D) = "" {}
-        _Depth ("Depth", Float) = 0
-    }
-    SubShader
-    {
-        Tags { "RenderType"="Overlay" }
-        LOD 100
+	Properties
+	{
+		_MainTex("_MainTex", 3D) = "" {}
+		_Size("_Size", Vector) = (512.0,512.0,1.0,1.0)
+		_Slice("_Slice", Float) = 0.5
+		_Channels("_Channels", Vector) = (1.0,1.0,1.0,1.0)
+		_PreviewMip("_PreviewMip", Float) = 0.0
+	}
+		SubShader
+		{
+			Tags { "RenderType" = "Overlay" }
+			LOD 100
 
-        Pass
-        {
-            Blend SrcAlpha OneMinusSrcAlpha
-			Cull Off
-			ZWrite Off
-			ZTest LEqual
 
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
+			Pass
+			{
+				Blend SrcAlpha OneMinusSrcAlpha
+				Cull Off
+				ZWrite Off
+				ZTest LEqual
 
-            #include "UnityCG.cginc"
 
-            struct appdata
-            {
-                float4 vertex : POSITION;
-                float2 uv : TEXCOORD0;
-            };
+				CGPROGRAM
+				#pragma vertex vert
+				#pragma fragment frag
 
-            struct v2f
-            {
-                float2 uv : TEXCOORD0;
-                float4 vertex : SV_POSITION;
-            };
+				#include "UnityCG.cginc"
 
-            UNITY_DECLARE_TEX3D(_Texture3D);
-            // SamplerState sampler_Point_Clamp_Texture3D;
-            SamplerState sampler_Linear_Clamp_Texture3D;
-            float4 _Texture3D_ST;
-            float4 _Texture3D_TexelSize;
-            float _Depth;
+				struct appdata
+				{
+					float4 vertex : POSITION;
+					float2 uv : TEXCOORD0;
+				};
 
-            v2f vert (appdata v)
-            {
-                v2f o;
-                o.vertex = UnityObjectToClipPos(v.vertex);
-                o.uv = TRANSFORM_TEX(v.uv, _Texture3D);
-                return o;
-            }
+				struct v2f
+				{
+					float2 uv : TEXCOORD0;
+					float4 vertex : SV_POSITION;
+					float2 clipUV : TEXCOORD1;
+				};
 
-            fixed4 frag (v2f i) : SV_Target
-            {
-                // sample the texture
-                // For debug we can use a point sampler: TODO make it an option in the UI
-                // return _Texture3D.Sample(sampler_Point_Clamp_Texture3D, float3(i.uv, _Depth));
-                return _Texture3D.Sample(sampler_Linear_Clamp_Texture3D, float3(i.uv, _Depth));
-            }
-            ENDCG
-        }
-    }
+				sampler3D _MainTex;
+				float4 _MainTex_ST;
+				float4 _Size;
+				float4 _Channels;
+				float _PreviewMip;
+				float _SRGB;
+				float _Slice;
+
+				uniform float4x4 unity_GUIClipTextureMatrix;
+				sampler2D _GUIClipTexture;
+
+				v2f vert(appdata v)
+				{
+					v2f o;
+					o.vertex = UnityObjectToClipPos(v.vertex);
+					o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+
+					float3 screenUV = UnityObjectToViewPos(v.vertex);
+					o.clipUV = mul(unity_GUIClipTextureMatrix, float4(screenUV.xy, 0, 1.0));
+
+					return o;
+				}
+
+				float4 frag(v2f i) : SV_Target
+				{
+					float2 checkerboardUVs = ceil(fmod(i.uv * _Size.xy / 64.0, 1.0) - 0.5);
+					float3 checkerboard = lerp(0.3,0.4, checkerboardUVs.x != checkerboardUVs.y ? 1 : 0);
+					float4 color = tex3Dlod(_MainTex, float4(i.uv, _Slice, floor(_PreviewMip))) * _Channels;
+
+					if (_Channels.a == 0.0)
+						color.a = 1.0;
+
+					else if (_Channels.r == 0.0 && _Channels.g == 0.0 && _Channels.b == 0.0 && _Channels.a == 1.0)
+					{
+						color.rgb = color.a;
+						color.a = 1.0;
+					}
+					color.xyz = pow(color.xyz, 1.0 / 2.2);
+					float clip = tex2D(_GUIClipTexture, i.clipUV).a;
+					return saturate(float4(lerp(checkerboard, color.xyz, color.a), clip));
+				}
+				ENDCG
+			}
+		}
 }

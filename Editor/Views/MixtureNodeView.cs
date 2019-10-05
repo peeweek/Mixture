@@ -277,35 +277,46 @@ namespace Mixture
                 );
         }
 
-		void DrawPreviewCommonSettings()
+		void DrawPreviewCommonSettings(bool showRGBA, bool showMip, bool showSlice)
 		{
 			GUILayout.Space(6);
 
 			using(new GUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(12)))
 			{
-				EditorGUI.BeginChangeCheck();
+                if(showRGBA)
+                {
+				    EditorGUI.BeginChangeCheck();
 
-				bool r = GUILayout.Toggle( (nodeTarget.previewMode & PreviewChannels.R) != 0,"R", EditorStyles.toolbarButton);
-				bool g = GUILayout.Toggle( (nodeTarget.previewMode & PreviewChannels.G) != 0,"G", EditorStyles.toolbarButton);
-				bool b = GUILayout.Toggle( (nodeTarget.previewMode & PreviewChannels.B) != 0,"B", EditorStyles.toolbarButton);
-				bool a = GUILayout.Toggle( (nodeTarget.previewMode & PreviewChannels.A) != 0,"A", EditorStyles.toolbarButton);
+				    bool r = GUILayout.Toggle( (nodeTarget.previewMode & PreviewChannels.R) != 0,"R", EditorStyles.toolbarButton);
+				    bool g = GUILayout.Toggle( (nodeTarget.previewMode & PreviewChannels.G) != 0,"G", EditorStyles.toolbarButton);
+				    bool b = GUILayout.Toggle( (nodeTarget.previewMode & PreviewChannels.B) != 0,"B", EditorStyles.toolbarButton);
+				    bool a = GUILayout.Toggle( (nodeTarget.previewMode & PreviewChannels.A) != 0,"A", EditorStyles.toolbarButton);
 
-				if (EditorGUI.EndChangeCheck())
-				{
-					nodeTarget.previewMode =
-					(r ? PreviewChannels.R : 0) |
-					(g ? PreviewChannels.G : 0) |
-					(b ? PreviewChannels.B : 0) |
-					(a ? PreviewChannels.A : 0);
-				}
+				    if (EditorGUI.EndChangeCheck())
+				    {
+					    nodeTarget.previewMode =
+					    (r ? PreviewChannels.R : 0) |
+					    (g ? PreviewChannels.G : 0) |
+					    (b ? PreviewChannels.B : 0) |
+					    (a ? PreviewChannels.A : 0);
+				    }
+                }
 
-				GUILayout.Space(8);
+                if(showMip && nodeTarget.previewTexture.mipmapCount > 0)
+                {
+				    GUILayout.FlexibleSpace();
+				
+				    nodeTarget.previewMip = GUILayout.HorizontalSlider(nodeTarget.previewMip, 0.0f, 8.0f, GUILayout.Width(64));
+				    GUILayout.Label("Mip"+ nodeTarget.previewMip.ToString("0"), EditorStyles.toolbarButton);
+                }
 
-				nodeTarget.previewMip = GUILayout.HorizontalSlider(nodeTarget.previewMip, 0.0f, 5.0f, GUILayout.Width(64));
-				GUILayout.Label("Mip #"+ nodeTarget.previewMip.ToString("0"), EditorStyles.toolbarButton);
-
-				GUILayout.FlexibleSpace();
-			}
+                if(showSlice)
+                {
+                    GUILayout.FlexibleSpace();
+                    nodeTarget.previewSlice = GUILayout.HorizontalSlider(nodeTarget.previewSlice, 0.0f, 8.0f, GUILayout.Width(64));
+                    GUILayout.Label("Slice #" + nodeTarget.previewSlice.ToString("0"), EditorStyles.toolbarButton);
+                }
+            }
 		}
 
 		void DrawTextureInfoHover(Rect previewRect, Texture texture)
@@ -317,7 +328,7 @@ namespace Mixture
 				previewRect.yMax -= 4;
 				EditorGUI.DrawRect(previewRect, new Color(0, 0, 0, 0.65f));
 
-				previewRect.yMin += 8;
+				previewRect.yMin += 0;
 				previewRect.xMin += 8;
 
 				int shadowDist = 2;
@@ -340,7 +351,7 @@ namespace Mixture
 				if (texture == null)
 					return;
 
-				DrawPreviewCommonSettings();
+				DrawPreviewCommonSettings(true, true, false);
 
 				MixtureUtils.texture2DPreviewMaterial.SetTexture("_MainTex", texture);
 				MixtureUtils.texture2DPreviewMaterial.SetVector("_Size", new Vector4(texture.width,texture.height,1,1));
@@ -367,15 +378,14 @@ namespace Mixture
 				if (texture == null)
 					return;
 
-				// DrawPreviewCommonSettings();
+				DrawPreviewCommonSettings(true,false,true);
 
 				// square image:
-				// MixtureUtils.texture3DPreviewMaterial.SetTexture("_Texture3D", texture);
-				// MixtureUtils.texture3DPreviewMaterial.SetFloat("_Depth", ((float)currentSlice + 0.5f) / nodeTarget.rtSettings.GetDepth(owner.graph));
-				// EditorGUI.DrawPreviewTexture(GetPreviewRect(texture), Texture2D.whiteTexture, MixtureUtils.texture3DPreviewMaterial, ScaleMode.ScaleToFit, 0, 0);
 				Rect previewRect = GetPreviewRect(texture);
-				EditorGUI.DrawPreviewTexture(previewRect, Texture2D.whiteTexture, MixtureUtils.texture3DPreviewMaterial, ScaleMode.ScaleToFit, 0, 0, ColorWriteMask.Red);
-				EditorGUILayout.LabelField("UHFEIW");
+				MixtureUtils.texture3DPreviewMaterial.SetTexture("_MainTex", texture);
+				MixtureUtils.texture3DPreviewMaterial.SetFloat("_Slice", ((float)currentSlice + 0.5f) / nodeTarget.rtSettings.GetDepth(owner.graph));
+				EditorGUI.DrawPreviewTexture(previewRect, null, MixtureUtils.texture3DPreviewMaterial, ScaleMode.ScaleToFit, 0, 0, ColorWriteMask.Red);
+				//EditorGUILayout.LabelField("UHFEIW");
 
 				// DrawTextureInfoHover(previewRect, texture);
             });
@@ -392,12 +402,14 @@ namespace Mixture
 				if (texture == null)
 					return;
 
-				DrawPreviewCommonSettings();
+				DrawPreviewCommonSettings(true, true, false);
 
 				MixtureUtils.textureCubePreviewMaterial.SetTexture("_Cubemap", texture);
-				MixtureUtils.textureCubePreviewMaterial.SetFloat("_Slice", currentSlice);
-				// square image:
-				Rect previewRect = GetPreviewRect(texture);
+				MixtureUtils.textureCubePreviewMaterial.SetFloat("_Slice", nodeTarget.previewSlice);
+                MixtureUtils.textureCubePreviewMaterial.SetVector("_Channels", GetChannelsMask(nodeTarget.previewMode));
+                MixtureUtils.textureCubePreviewMaterial.SetFloat("_PreviewMip", nodeTarget.previewMip);
+                // square image:
+                Rect previewRect = GetPreviewRect(texture);
 				EditorGUI.DrawPreviewTexture(previewRect, Texture2D.whiteTexture, MixtureUtils.textureCubePreviewMaterial, ScaleMode.ScaleToFit, 0, 0);
 
 				DrawTextureInfoHover(previewRect, texture);

@@ -37,6 +37,7 @@
             {
                 float2 uv : TEXCOORD0;
                 float4 vertex : SV_POSITION;
+				float2 clipUV : TEXCOORD1;
             };
 
 			sampler2D _MainTex;
@@ -46,11 +47,18 @@
 			float _PreviewMip;
 			float _SRGB;
 
+			uniform float4x4 unity_GUIClipTextureMatrix;
+			sampler2D _GUIClipTexture;
+
             v2f vert (appdata v)
             {
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+
+				float3 screenUV = UnityObjectToViewPos(v.vertex);
+				o.clipUV = mul(unity_GUIClipTextureMatrix, float4(screenUV.xy, 0, 1.0));
+
                 return o;
             }
 
@@ -69,8 +77,8 @@
 					color.a = 1.0;
 				}
 				color.xyz = pow(color.xyz, 1.0 / 2.2);
-
-				return float4(lerp(checkerboard, color.xyz, color.a),1);
+				float clip = tex2D(_GUIClipTexture, i.clipUV).a;
+				return saturate(float4(lerp(checkerboard, color.xyz, color.a), clip));
             }
             ENDCG
         }

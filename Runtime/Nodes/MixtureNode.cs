@@ -41,6 +41,8 @@ namespace Mixture
         [SerializeField]
         public float previewMip = 0.0f;
         [SerializeField]
+        public float previewSlice = 0.0f;
+        [SerializeField]
         public bool previewVisible = true;
 
 
