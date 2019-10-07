@@ -382,10 +382,9 @@ namespace Mixture
 
 				// square image:
 				Rect previewRect = GetPreviewRect(texture);
-				MixtureUtils.texture3DPreviewMaterial.SetTexture("_MainTex", texture);
+				MixtureUtils.texture3DPreviewMaterial.SetTexture("_MainTex", texture as Texture3D);
 				MixtureUtils.texture3DPreviewMaterial.SetFloat("_Slice", ((float)currentSlice + 0.5f) / nodeTarget.rtSettings.GetDepth(owner.graph));
-				EditorGUI.DrawPreviewTexture(previewRect, null, MixtureUtils.texture3DPreviewMaterial, ScaleMode.ScaleToFit, 0, 0, ColorWriteMask.Red);
-				//EditorGUILayout.LabelField("UHFEIW");
+				EditorGUI.DrawPreviewTexture(previewRect, texture, MixtureUtils.texture3DPreviewMaterial, ScaleMode.ScaleToFit, 0, 0, ColorWriteMask.Red);
 
 				// DrawTextureInfoHover(previewRect, texture);
             });

@@ -69,6 +69,20 @@ namespace Mixture
             }
         }
 
+        public static Texture3D default3DTexture {
+            get
+            {
+                if (s_default3DTexture == null)
+                {
+                    s_default3DTexture = new Texture3D(1, 1, 1, TextureFormat.ARGB32, false);
+                    s_default3DTexture.SetPixel(0, 0, 0, new Color(1,1,0,1));
+                    s_default3DTexture.Apply();
+                }
+                return s_default3DTexture;
+            }
+        }
+        static Texture3D s_default3DTexture;
+
         static Material _texture3DPreviewMaterial;
 		public static Material texture3DPreviewMaterial
 		{
