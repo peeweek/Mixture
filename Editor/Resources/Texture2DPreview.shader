@@ -2,7 +2,7 @@
 {
     Properties
     {
-        _MainTex ("_MainTex", 2D) = "" {}
+        _PreviewTexture ("_PreviewTexture", 2D) = "" {}
 		_Size("_Size", Vector) = (512.0,512.0,1.0,1.0)
 		_Channels ("_Channels", Vector) = (1.0,1.0,1.0,1.0)
 		_PreviewMip("_PreviewMip", Float) = 0.0
@@ -40,8 +40,8 @@
 				float2 clipUV : TEXCOORD1;
             };
 
-			sampler2D _MainTex;
-			float4 _MainTex_ST;
+			sampler2D _PreviewTexture;
+			float4 _PreviewTexture_ST;
             float4 _Size;
 			float4 _Channels;
 			float _PreviewMip;
@@ -54,7 +54,7 @@
             {
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
-                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+                o.uv = TRANSFORM_TEX(v.uv, _PreviewTexture);
 
 				float3 screenUV = UnityObjectToViewPos(v.vertex);
 				o.clipUV = mul(unity_GUIClipTextureMatrix, float4(screenUV.xy, 0, 1.0));
@@ -66,7 +66,7 @@
             {
 				float2 checkerboardUVs = ceil(fmod(i.uv * _Size.xy / 64.0, 1.0)-0.5);
 				float3 checkerboard = lerp(0.3,0.4, checkerboardUVs.x != checkerboardUVs.y ? 1 : 0);
-				float4 color = tex2Dlod(_MainTex, float4(i.uv, 0.0, floor(_PreviewMip))) * _Channels;
+				float4 color = tex2Dlod(_PreviewTexture, float4(i.uv, 0.0, floor(_PreviewMip))) * _Channels;
 				
 				if (_Channels.a == 0.0) 
 					color.a = 1.0;

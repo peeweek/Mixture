@@ -2,7 +2,7 @@
 {
     Properties
     {
-        _Cubemap ("Texture", Cube) = "" {}
+		_PreviewTexture("_PreviewTexture", Cube) = "" {}
         _Slice ("Slice", Float) = 0
 		_Channels("_Channels", Vector) = (1.0,1.0,1.0,1.0)
 		_PreviewMip("_PreviewMip", Float) = 0.0
@@ -39,8 +39,8 @@
 				float2 clipUV : TEXCOORD1;
             };
 
-            UNITY_DECLARE_TEXCUBE(_Cubemap);
-            float4 _Cubemap_ST;
+            UNITY_DECLARE_TEXCUBE(_PreviewTexture);
+            float4 _PreviewTexture_ST;
             float _Slice;
 			float4 _Channels;
 			float _PreviewMip;
@@ -52,7 +52,7 @@
             {
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
-                o.uv = TRANSFORM_TEX(v.uv, _Cubemap);
+                o.uv = TRANSFORM_TEX(v.uv, _PreviewTexture);
 
 				float3 screenUV = UnityObjectToViewPos(v.vertex);
 				o.clipUV = mul(unity_GUIClipTextureMatrix, float4(screenUV.xy, 0, 1.0));
@@ -65,7 +65,7 @@
 				float2 checkerboardUVs = ceil(fmod(i.uv * 16.0, 1.0) - 0.5);
 				float3 checkerboard = lerp(0.3,0.4, checkerboardUVs.x != checkerboardUVs.y ? 1 : 0);
 
-				float4 color = UNITY_SAMPLE_TEXCUBE_LOD(_Cubemap, LatlongToDirectionCoordinate(i.uv), _PreviewMip) * _Channels;
+				float4 color = UNITY_SAMPLE_TEXCUBE_LOD(_PreviewTexture, LatlongToDirectionCoordinate(i.uv), _PreviewMip) * _Channels;
 
 				if (_Channels.a == 0.0)
 					color.a = 1.0;
